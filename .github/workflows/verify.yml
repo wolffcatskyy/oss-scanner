@@ -27,7 +27,7 @@ jobs:
           ref: ${{ matrix.branch }}
       - name: Clone target repo
         run: git clone --depth 1 https://github.com/wolffcatskyy/${{ matrix.repo }} target
-      - name: Docker build (scanner contract: repo checkout as build context)
+      - name: "Docker build (scanner contract - repo checkout as build context)"
         run: docker build -f projects/${{ matrix.name }}/Dockerfile -t scan-${{ matrix.name }} target
       - name: Run tests inside image, networking disabled
         run: |

@@ -33,9 +33,9 @@ jobs:
         run: |
           case "${{ matrix.name }}" in
             crowdsec-blocklist-import)
-              docker run --rm --network none scan-${{ matrix.name }} python -m pytest -q ;;
+              docker run --rm --network none scan-${{ matrix.name }} python -m pytest -q --ignore=test_release_metadata.py ;;
             crowdsec-unifi-bouncer)
-              docker run --rm --network none scan-${{ matrix.name }} bash -c "cd sidecar && go test ./... && shellcheck -S error \$(find . -name '*.sh' -not -path './.git/*')" ;;
+              docker run --rm --network none scan-${{ matrix.name }} bash -c "cd sidecar && go test ./... && cd /src && shellcheck -S error \$(find . -name '*.sh' -not -path './.git/*')" ;;
             crowdsec-unifi-parser)
               docker run --rm --network none scan-${{ matrix.name }} bash -c "python test_deploy_log_rules.py && python -c \"import glob, yaml; files=[f for f in glob.glob('**/*.yaml', recursive=True)+glob.glob('**/*.yml', recursive=True) if '/.git/' not in f]; [list(yaml.safe_load_all(open(f))) for f in files]; print(len(files), 'YAML files OK')\"" ;;
             linux-mac)

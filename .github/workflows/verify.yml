@@ -10,21 +10,25 @@ jobs:
       matrix:
         include:
           - name: crowdsec-blocklist-import
+            branch: enroll-crowdsec-blocklist-import
             repo: crowdsec-blocklist-import
             test: python -m pytest -q
           - name: crowdsec-unifi-bouncer
+            branch: enroll-crowdsec-unifi-bouncer
             repo: crowdsec-unifi-bouncer
             test: bash -c "cd sidecar && go test ./... && shellcheck -S error $(find . -name '*.sh' -not -path './.git/*')"
           - name: crowdsec-unifi-parser
+            branch: enroll-crowdsec-unifi-parser
             repo: crowdsec-unifi-parser
             test: bash -c "python test_deploy_log_rules.py && python -c \"import glob, yaml; files=[f for f in glob.glob('**/*.yaml', recursive=True)+glob.glob('**/*.yml', recursive=True) if '/.git/' not in f]; [list(yaml.safe_load_all(open(f))) for f in files]; print(len(files), 'YAML files OK')\""
           - name: linux-mac
+            branch: enroll-linux-mac
             repo: linux-mac
             test: bash -c "shellcheck -S error $(find scripts -name '*.sh') && python3 -c \"import py_compile; py_compile.compile('scripts/audit-modules.py', doraise=True); print('py_compile OK')\""
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ matrix.name == 'crowdsec-blocklist-import' && 'enroll-crowdsec-blocklist-import' || matrix.name == 'crowdsec-unifi-bouncer' && 'enroll-crowdsec-unifi-bouncer' || matrix.name == 'crowdsec-unifi-parser' && 'enroll-crowdsec-unifi-parser' || 'enroll-linux-mac' }}
+          ref: ${{ matrix.branch }}
       - name: Clone target repo
         run: git clone --depth 1 https://github.com/wolffcatskyy/${{ matrix.repo }} target
       - name: Docker build (scanner contract: repo checkout as build context)

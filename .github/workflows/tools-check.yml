@@ -1,0 +1,35 @@
+name: tools-check-verification
+on:
+  push:
+    branches: [ci-verify-check]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: crowdsec-unifi-bouncer
+            branch: enroll-crowdsec-unifi-bouncer
+          - name: crowdsec-unifi-parser
+            branch: enroll-crowdsec-unifi-parser
+          - name: linux-mac
+            branch: enroll-linux-mac
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.branch }}
+      - name: Install PyYAML
+        run: python3 -m pip install pyyaml
+      - name: "tools/check build (validate, clone, project image, scanner layer)"
+        run: python3 tools/check ${{ matrix.name }} --no-shell
+      - name: "Tests in the built image, networking disabled"
+        run: |
+          case "${{ matrix.name }}" in
+            crowdsec-unifi-bouncer)
+              docker run --rm --network none --cap-add SYS_PTRACE -w /src oss-scanner-check/built:${{ matrix.name }} bash -c "cd sidecar && go test ./... && cd /src && shellcheck -S error \$(find . -name '*.sh' -not -path './.git/*')" ;;
+            crowdsec-unifi-parser)
+              docker run --rm --network none --cap-add SYS_PTRACE -w /src oss-scanner-check/built:${{ matrix.name }} bash -c "python test_deploy_log_rules.py && python -c \"import glob, yaml; files=[f for f in glob.glob('**/*.yaml', recursive=True)+glob.glob('**/*.yml', recursive=True) if '/.git/' not in f]; [list(yaml.safe_load_all(open(f))) for f in files]; print(len(files), 'YAML files OK')\"" ;;
+            linux-mac)
+              docker run --rm --network none --cap-add SYS_PTRACE -w /src oss-scanner-check/built:${{ matrix.name }} bash -c "shellcheck -S error \$(find scripts -name '*.sh') && python3 -c \"import py_compile; py_compile.compile('scripts/audit-modules.py', doraise=True); print('py_compile OK')\"" ;;
+          esac
